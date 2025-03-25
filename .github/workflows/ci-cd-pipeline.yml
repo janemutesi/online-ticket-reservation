@@ -45,12 +45,7 @@ jobs:
 
      
 
-      - name: Build and push Microservice
-        uses: docker/build-push-action@v4
-        with:
-          context: ./microservice
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/ticket-microservice:latest
+      
 
   deploy:
     needs: build-and-push
