@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'your-registry'
+        BACKEND_IMAGE = "${DOCKER_REGISTRY}/ticket-backend"
+        MICROSERVICE_IMAGE = "${DOCKER_REGISTRY}/ticket-microservice"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Backend') {
+            steps {
+                dir('backend') {
+                    sh 'npm install'
+                    sh 'npm test'
+                    sh "docker build -t ${BACKEND_IMAGE}:${BUILD_NUMBER} ."
+                    sh "docker tag ${BACKEND_IMAGE}:${BUILD_NUMBER} ${BACKEND_IMAGE}:latest"
+                }
+            }
+        }
+
+        stage('Build Microservice') {
+            steps {
+                dir('microservice') {
+                    sh 'npm install'
+                    sh 'npm test'
+                    sh "docker build -t ${MICROSERVICE_IMAGE}:${BUILD_NUMBER} ."
+                    sh "docker tag ${MICROSERVICE_IMAGE}:${BUILD_NUMBER} ${MICROSERVICE_IMAGE}:latest"
+                }
+            }
+        }
+
+        stage('Push Images') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}"
+                    sh "docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}"
+                    sh "docker push ${BACKEND_IMAGE}:latest"
+                    sh "docker push ${MICROSERVICE_IMAGE}:${BUILD_NUMBER}"
+                    sh "docker push ${MICROSERVICE_IMAGE}:latest"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'kubernetes-credentials']) {
+                    sh 'kubectl apply -f k8s/'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}

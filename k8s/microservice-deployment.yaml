@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-microservice
+  labels:
+    app: ticket-microservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ticket-microservice
+  template:
+    metadata:
+      labels:
+        app: ticket-microservice
+    spec:
+      containers:
+      - name: ticket-microservice
+        image: ticket-microservice:latest
+        ports:
+        - containerPort: 3001
+        env:
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secret
+              key: secret-key
+        - name: STRIPE_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secret
+              key: webhook-secret
+        - name: SMTP_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: email-config
+              key: smtp-host
+        - name: SMTP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: email-config
+              key: smtp-port
+        - name: SMTP_USER
+          valueFrom:
+            secretKeyRef:
+              name: email-secret
+              key: username
+        - name: SMTP_PASS
+          valueFrom:
+            secretKeyRef:
+              name: email-secret
+              key: password
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticket-microservice-service
+spec:
+  selector:
+    app: ticket-microservice
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3001
+  type: ClusterIP
