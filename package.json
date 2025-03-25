@@ -1,0 +1,20 @@
+{
+  "name": "online-ticket-reservation",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "microservice"
+  ],
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:microservice\"",
+    "start:backend": "cd backend && npm start",
+    "start:microservice": "cd microservice && npm start",
+    "install:all": "npm install && npm run install:services",
+    "install:services": "concurrently \"cd backend && npm install\" \"cd microservice && npm install\"",
+    "test": "concurrently \"cd backend && npm test\" \"cd microservice && npm test\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
