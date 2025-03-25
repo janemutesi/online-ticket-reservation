@@ -43,12 +43,7 @@ jobs:
 
     
 
-      - name: Build and push Backend
-        uses: docker/build-push-action@v4
-        with:
-          context: ./backend
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/ticket-backend:latest
+     
 
       - name: Build and push Microservice
         uses: docker/build-push-action@v4
